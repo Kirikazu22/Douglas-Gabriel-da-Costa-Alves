@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, send_from_directory  # Importa as funcionalidades principais do Flask
 from flask_cors import CORS  # Permite requisições de outros domínios (CORS)
 import ast  # Biblioteca usada para analisar o código Python como árvore sintática abstrata
+import os
 
 # Inicializa a aplicação Flask, definindo a pasta 'dist' como estática (frontend)
 app = Flask(__name__, static_folder='dist')
@@ -22,9 +23,27 @@ def index():
     return send_from_directory(app.static_folder, 'index.html')
 
 # Rota que serve outros arquivos estáticos da pasta 'dist'
-@app.route('/<path:path>')
-def serve_files(path):
-    return send_from_directory(app.static_folder, path)
+@app.route('/<path:filename>')
+def serve_static(filename):
+    gzipped_file = f"{filename}.gz"
+    gzipped_path = os.path.join(app.static_folder, gzipped_file)
+
+    if os.path.exists(gzipped_path):
+        response = send_from_directory(app.static_folder, gzipped_file)
+        response.headers["Content-Encoding"] = "gzip"
+        response.headers["Content-Type"] = guess_mime_type(filename)
+        return response
+
+    return send_from_directory(app.static_folder, filename)
+
+def guess_mime_type(filename):
+    if filename.endswith(".wasm"):
+        return "application/wasm"
+    if filename.endswith(".js"):
+        return "application/javascript"
+    if filename.endswith(".pck"):
+        return "application/octet-stream"
+    return "application/octet-stream"
 
 # Função auxiliar que verifica se todos os comandos jogador.mover(...) estão dentro de loops
 def all_mover_calls_inside_loops(tree):
@@ -373,4 +392,5 @@ def execute_code():
 
 # Inicia o servidor Flask na porta 8000
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=8000, threaded=True)
+    port = int(os.environ.get('PORT', 10000))  # porta que o Render fornece
+    app.run(host='0.0.0.0', port=port, threaded=True)

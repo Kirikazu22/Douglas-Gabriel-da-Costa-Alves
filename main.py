@@ -58,5 +58,6 @@ def execute_code():
         return jsonify({"error": f"Erro interno no servidor: {str(e)}"}), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 8000))
+    port = int(os.environ.get('PORT', 10000))  # porta que o Render fornece
     app.run(host='0.0.0.0', port=port, threaded=True)
+

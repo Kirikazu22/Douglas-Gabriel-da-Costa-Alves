@@ -19,9 +19,27 @@ def apply_cors(response):
 def index():
     return send_from_directory(app.static_folder, 'index.html')
 
-@app.route('/<path:path>')
-def serve_files(path):
-    return send_from_directory(app.static_folder, path)
+@app.route('/<path:filename>')
+def serve_static(filename):
+    gzipped_file = f"{filename}.gz"
+    gzipped_path = os.path.join(app.static_folder, gzipped_file)
+
+    if os.path.exists(gzipped_path):
+        response = send_from_directory(app.static_folder, gzipped_file)
+        response.headers["Content-Encoding"] = "gzip"
+        response.headers["Content-Type"] = guess_mime_type(filename)
+        return response
+
+    return send_from_directory(app.static_folder, filename)
+
+def guess_mime_type(filename):
+    if filename.endswith(".wasm"):
+        return "application/wasm"
+    if filename.endswith(".js"):
+        return "application/javascript"
+    if filename.endswith(".pck"):
+        return "application/octet-stream"
+    return "application/octet-stream"
 
 def executar_codigo(code, fase):
     """
